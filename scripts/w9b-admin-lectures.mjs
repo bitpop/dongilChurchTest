@@ -1,17 +1,17 @@
 // 관리자: 강의 등록(영상 1개 포함) → /lectures 교인 화면 확인(진도/탭) → 삭제
-import { launch, goto, click, typeInto, text, nodes, inputs, login, logout, step, TAG } from './qa-lib.mjs';
+import { launch, goto, click, typeInto, text, nodes, inputs, login, logout, step, TAG, clickLast as clickLastLib } from './qa-lib.mjs';
 const { browser, page, logs, shot } = await launch({ out: 'reports/write/lectures' });
 const btns = async () => (await nodes(page)).filter(n => n.role).map(n => `[${n.role}]${n.label}`).join(' | ');
-const clickLast = async (re) => { const list = (await nodes(page)).filter(n => n.role === 'button' && re.test(n.label)); const n = list[list.length - 1]; if (!n) throw new Error('no ' + re); await page.mouse.click(n.x + n.w / 2, n.y + n.h / 2); await page.waitForTimeout(3000); };
+const clickLast = (re) => clickLastLib(page, re);
 try {
   step('login'); await login(page);
   await goto(page, '/manage/lectures'); await click(page, /^새 강의$/, { role: 'button', wait: 3000 });
-  await typeInto(page, 0, `${TAG} 강의 ${Date.now()}`); await typeInto(page, 1, '검수용 강사'); await typeInto(page, 2, '<p>자동 검수용 강의입니다. 곧 삭제됩니다.</p>');
+  await typeInto(page, 0, `${TAG} 강의 ${Date.now()}`); await typeInto(page, 1, '자동 검수용 강의 설명입니다.'); await typeInto(page, 2, '<p>자동 검수용 강의입니다. 곧 삭제됩니다.</p>');
   step('영상 추가'); const before = (await inputs(page)).length; await click(page, /^영상 추가$/, { role: 'button', wait: 2000 }); const after = await inputs(page); console.log('inputs before/after', before, after.length, JSON.stringify(after.map(i => i.type + ':' + i.value)));
   console.log(await text(page, 1200)); await shot('video_row');
   // 새로 생긴 입력: 유튜브 링크, 제목?, 분, 초 순으로 추정 → 값 채움
   const newIdx = []; for (let i = before; i < after.length; i++) newIdx.push(i);
-  const vals = ['https://www.youtube.com/watch?v=_4EbWE7Xxjk', '검수용 영상', '1', '30'];
+  const vals = ['검수용 영상', 'https://www.youtube.com/watch?v=_4EbWE7Xxjk', '1', '30'];  // 순서: 영상 제목, 유튜브 링크, 분, 초
   for (let k = 0; k < newIdx.length && k < vals.length; k++) await typeInto(page, newIdx[k], vals[k], { clear: true });
   console.log('values', JSON.stringify((await inputs(page)).map(i => i.type + ':' + i.value))); await shot('filled');
   step('저장'); await clickLast(/^등록$/); await page.waitForTimeout(1500); console.log('url', page.url()); console.log(await text(page, 600)); await shot('saved');

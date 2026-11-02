@@ -46,10 +46,29 @@ export async function find(page, re, { role } = {}) {
   const r = re instanceof RegExp ? re : new RegExp(re.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   return list.find(n => r.test(n.label) && (!role || n.role === role));
 }
+// 뷰포트 밖 노드는 휠 스크롤로 끌어온 뒤 다시 찾는다 (Flutter 는 자체 스크롤이라 뷰포트 밖 클릭이 무시됨)
+export async function ensureVisible(page, n, refind) {
+  const vh = page.viewportSize().height;
+  for (let i = 0; i < 6 && n && (n.y < 0 || n.y + n.h > vh); i++) {
+    await page.mouse.move(page.viewportSize().width / 2, vh / 2);
+    await page.mouse.wheel(0, n.y + n.h / 2 - vh / 2);
+    await page.waitForTimeout(600); await enableSemantics(page);
+    n = await refind();
+  }
+  return n;
+}
+export async function clickLast(page, re, wait = 3000) {
+  const pick = async () => { const list = (await nodes(page)).filter(n => n.role === 'button' && re.test(n.label)); return list[list.length - 1]; };
+  let n = await pick(); if (!n) throw new Error('no ' + re);
+  n = await ensureVisible(page, n, pick); if (!n) throw new Error('no ' + re);
+  await page.mouse.click(n.x + n.w / 2, n.y + n.h / 2); await page.waitForTimeout(wait); await enableSemantics(page);
+}
 export async function click(page, re, opts = {}) {
   await enableSemantics(page);
-  const n = await find(page, re, opts);
+  let n = await find(page, re, opts);
   if (!n) throw new Error(`node not found: ${re}`);
+  n = await ensureVisible(page, n, () => find(page, re, opts));
+  if (!n) throw new Error(`node not found after scroll: ${re}`);
   await page.mouse.click(n.x + n.w / 2, n.y + n.h / 2);
   await page.waitForTimeout(opts.wait ?? 1500);
   await enableSemantics(page);
@@ -61,8 +80,10 @@ export async function inputs(page) {
 }
 export async function typeInto(page, idx, value, { clear = false } = {}) {
   const list = await inputs(page);
-  const i = typeof idx === 'number' ? list[idx] : list.find(idx);
+  let i = typeof idx === 'number' ? list[idx] : list.find(idx);
   if (!i) throw new Error(`input not found: ${idx} (have ${list.length})`);
+  const vh = page.viewportSize().height;
+  if (i.y < 0 || i.y > vh) { await page.mouse.move(page.viewportSize().width / 2, vh / 2); await page.mouse.wheel(0, i.y - vh / 2); await page.waitForTimeout(600); const l2 = await inputs(page); i = typeof idx === 'number' ? l2[idx] : l2.find(idx); }
   await page.mouse.click(i.x, i.y); await page.waitForTimeout(300);
   if (clear) { await page.keyboard.press('Control+A'); await page.keyboard.press('Backspace'); }
   await page.keyboard.type(value, { delay: 15 });

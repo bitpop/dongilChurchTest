@@ -1,8 +1,8 @@
 // 관리자: 강의 등록 → /lectures 확인 → 삭제
-import { launch, goto, click, typeInto, text, nodes, inputs, login, logout, step, TAG } from './qa-lib.mjs';
+import { launch, goto, click, typeInto, text, nodes, inputs, login, logout, step, TAG, clickLast as clickLastLib } from './qa-lib.mjs';
 const { browser, page, logs, shot } = await launch({ out: 'reports/write/lectures' });
 const btns = async () => (await nodes(page)).filter(n => n.role).map(n => `[${n.role}]${n.label}`).join(' | ');
-const clickLast = async (re) => { const list = (await nodes(page)).filter(n => n.role === 'button' && re.test(n.label)); const n = list[list.length - 1]; if (!n) throw new Error('no ' + re); await page.mouse.click(n.x + n.w / 2, n.y + n.h / 2); await page.waitForTimeout(3000); };
+const clickLast = (re) => clickLastLib(page, re);
 try {
   step('login'); await login(page);
   await goto(page, '/manage/lectures'); await click(page, /^새 강의$/, { role: 'button', wait: 3000 });

@@ -1,7 +1,7 @@
 // 테스트로 등록한 교회 일정(id 1) 취소 → 공개 달력에서 사라지는지 확인
-import { launch, goto, click, text, nodes, login, logout, step } from './qa-lib.mjs';
+import { launch, goto, click, text, nodes, login, logout, step, clickLast as clickLastLib } from './qa-lib.mjs';
 const { browser, page, logs, shot } = await launch({ out: 'reports/write/events' });
-const clickLast = async (re) => { const list = (await nodes(page)).filter(n => n.role === 'button' && re.test(n.label)); const n = list[list.length - 1]; if (!n) throw new Error('no ' + re); await page.mouse.click(n.x + n.w / 2, n.y + n.h / 2); await page.waitForTimeout(3000); };
+const clickLast = (re) => clickLastLib(page, re);
 try {
   step('login'); await login(page);
   await goto(page, '/manage/events/1/edit');

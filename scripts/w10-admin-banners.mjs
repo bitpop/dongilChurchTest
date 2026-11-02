@@ -1,10 +1,10 @@
 // 관리자: '관리자' 메뉴(공개 화면에 노출되지 않는 메뉴) 배너 추가(이미지 업로드) → 보관 → 완전 삭제
 // 안전장치: 시작 시 '관리자' 메뉴의 게시/보관 배너가 0개일 때만 진행하고, 추가 후 1개가 된 항목만 조작한다.
-import { launch, goto, click, text, nodes, login, logout, step } from './qa-lib.mjs';
+import { launch, goto, click, text, nodes, login, logout, step, clickLast as clickLastLib } from './qa-lib.mjs';
 const { browser, page, logs, shot } = await launch({ out: 'reports/write/banners' });
 const btns = async () => (await nodes(page)).filter(n => n.role).map(n => `[${n.role}]${n.label}`).join(' | ');
-const clickLast = async (re) => { const list = (await nodes(page)).filter(n => n.role === 'button' && re.test(n.label)); const n = list[list.length - 1]; if (!n) throw new Error('no ' + re); await page.mouse.click(n.x + n.w / 2, n.y + n.h / 2); await page.waitForTimeout(3000); };
-const counts = async () => { const t = await text(page, 800); const m1 = t.match(/관리자 · 게시 중 (\d+)개/); const m2 = t.match(/보관함 · (\d+)개/); return { active: m1 ? +m1[1] : null, archived: m2 ? +m2[1] : null, t }; };
+const clickLast = (re) => clickLastLib(page, re);
+const counts = async () => { const t = await text(page, 800); const m1 = t.match(/관리자 · 게시 중 (\d+)개/); const m2 = t.match(/보관함 · (\d+)개/); return { active: m1 ? +m1[1] : null, archived: m2 ? +m2[1] : 0, t }; };
 try {
   step('login'); await login(page);
   await goto(page, '/manage/banners'); await click(page, /^관리자$/, { role: 'checkbox', wait: 2500 });
@@ -17,8 +17,9 @@ try {
   if (!ch) { const [ch2] = await Promise.all([page.waitForEvent('filechooser', { timeout: 10000 }).catch(() => null), click(page, /사진 올리기|사진 선택|이미지 선택|파일 선택|이미지 올리기/, { role: 'button', wait: 2000 }).catch(e => console.log('no upload button:', e.message))]); ch = ch2; }
   if (!ch) throw new Error('file chooser not opened');
   await ch.setFiles('reports/write/qa-banner.png'); await page.waitForTimeout(5000); console.log('after file:', await text(page, 600)); console.log(await btns()); await shot('after_file');
-  await clickLast(/^(게시|저장|등록|완료|적용|다음)$/).catch(e => console.log('save?', e.message)); await page.waitForTimeout(2000);
-  await clickLast(/^(게시|저장|등록|완료|적용)$/).catch(() => {}); await page.waitForTimeout(2000);
+  step('업로드'); await clickLast(/^업로드$/); await page.waitForTimeout(6000); console.log('after upload:', await text(page, 500)); console.log(await btns()); await shot('after_upload');
+  step('등록'); await clickLast(/^등록$/); await page.waitForTimeout(3000); console.log('after 등록:', await text(page, 600)); await shot('after_register');
+  if ((await nodes(page)).some(n => n.role === 'alertdialog')) { console.log('dialog still open:', await text(page, 500)); await clickLast(/^(등록|게시|확인)$/).catch(() => {}); await page.waitForTimeout(3000); }
   const c1 = await counts(); console.log('after add:', c1.active, c1.archived, c1.t.slice(0, 400)); await shot('added');
   if (c1.active !== 1) { console.log('배너가 1개로 확인되지 않아 중단'); throw new Error('stop'); }
   step('보관'); await click(page, /^보관$/, { role: 'button', wait: 1500 }); console.log('dialog', await text(page, 300)); await clickLast(/^(보관|확인)$/).catch(() => {}); await page.waitForTimeout(1500);
