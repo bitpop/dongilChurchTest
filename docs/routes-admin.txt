@@ -1,0 +1,27 @@
+# 로그인(관리자) 상태에서 점검할 라우트
+/
+/home
+/me
+/me/notifications
+/lectures
+/events
+/somoim
+/groups
+/bulletins
+/stories
+/prayer
+/admin-services/donation-receipt
+/manage
+/manage/sermons
+/manage/posts
+/manage/permissions
+/manage/members
+/manage/lectures
+/manage/groups
+/manage/events
+/manage/contents
+/manage/banners
+/stories/new
+/prayer/new
+/somoim/new
+/heritage/wishes/new

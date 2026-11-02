@@ -1,0 +1,16 @@
+# 상세 페이지 라우트 (API 에서 얻은 실제 ID)
+/worship/sermons/675
+/worship/sermons/999999
+/bulletins/1161
+/member-news/216
+/member-news/999999
+/gallery/1030
+/videos/687
+/press/217
+/ministry/1059
+/faq/82
+/about/vision
+/heritage/wishes
+/bible/search
+/search?q=%EC%98%88%EB%B0%B0
+/join/phone
