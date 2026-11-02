@@ -1,0 +1,25 @@
+{
+  "name": "dongilchurch-qa",
+  "version": "1.0.0",
+  "description": "dongilchurch.com 사이트 기능/디자인 검수 자동화",
+  "scripts": {
+    "audit": "node scripts/audit.mjs",
+    "inspect": "node scripts/inspect.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bitpop/dongilChurchTest.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bitpop/dongilChurchTest/issues"
+  },
+  "homepage": "https://github.com/bitpop/dongilChurchTest#readme",
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0"
+  },
+  "type": "module",
+  "private": true
+}
