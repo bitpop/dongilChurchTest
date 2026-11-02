@@ -15,6 +15,8 @@ https://dongilchurch.com/ 의 기능·화면 디자인에 버그나 문제, 디�
 |---|---|
 | `scripts/flutter-audit.mjs` | 라우트 목록을 데스크톱(1440)/모바일(390)으로 열어 스크린샷·시맨틱 텍스트·콘솔/HTTP 오류·API 호출 수집. `ADMIN_ID/ADMIN_PW` 가 있으면 UI 로그인 후 순회 |
 | `scripts/interact.mjs` | 인터랙션 시나리오(GNB, 검색, 배너, 설교 필터, 모바일 햄버거/탭) 단계별 캡처 |
+| `scripts/qa-lib.mjs` | 쓰기 검증용 공용 헬퍼(시맨틱 트리 기반 클릭/입력/로그인) |
+| `scripts/w*-*.mjs` | 2차 동작 검증 시나리오(게시판 CRUD, 관리자 등록/삭제, 내 정보 등). `[QA테스트]` 데이터만 생성·삭제 |
 | `scripts/login-ui.mjs` | 로그인 화면 검증(오류 메시지, 정상 로그인) |
 | `scripts/perf.mjs` | 초기 로딩 성능 측정 |
 | `scripts/sheet.py` | 스크린샷 묶음(contact sheet) 생성 |
@@ -42,6 +44,10 @@ node scripts/flutter-audit.mjs            # 비로그인, docs/routes.txt 전체
 
 ```bash
 node scripts/interact.mjs && node scripts/perf.mjs
+```
+
+```bash
+set -a; . ./.env; set +a; node scripts/w1-stories.mjs   # 쓰기 검증은 반드시 하나씩 순차 실행
 ```
 
 ```bash
