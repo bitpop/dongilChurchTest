@@ -164,7 +164,7 @@
 | F | 낮음 | /manage/groups/:id (보관됨) | 보관된 소그룹 상세 진입 시 `GET /api/groups/1` 404 콘솔 오류 |
 | G | 낮음 | /manage/lectures/new | 영상 없이 등록 시 "영상을 1개 이상 추가해 주세요" 가 안내문과 오류로 두 번 표시 |
 | H | 낮음 | /manage/posts 교우소식 등록 | 카테고리를 고르지 않으면 "공지" 로 등록됨(기본값이 공지). 경조사 소식이 공지로 잘못 게시될 수 있음 |
-| I | 낮음 | 공개 화면 | 공개 인터랙션 시나리오 중 `pageerror: Error` 2건 기록(새가족 폼~오시는 길 구간). 재현 조건 추가 조사 필요 |
+| I | 중간 | 주소 복사 버튼(설교·주보·갤러리·오시는 길 등) | 클립보드 쓰기가 허용되지 않는 환경에서 '주소 복사'를 누르면 Flutter `Clipboard.setData` 의 PlatformException(copy_fail)이 처리되지 않아 콘솔에 uncaught Error 가 남고, 사용자에게는 아무 피드백(토스트)도 없음. 허용 환경에서는 "링크를 복사했어요" 토스트 정상. 재현·스택은 아래 '재검증 메모' 참고 |
 
 ## 안전 분류기로 실행하지 못한 항목 (미검증)
 
@@ -214,8 +214,8 @@ Claude Code 자동 모드의 안전 분류기가 다음 쓰기 동작을 차단�
 | K | 낮음 | /manage/sermons 시리즈 | 같은 이름의 시리즈를 추가하면 409 응답의 메시지가 "동시에 처리 중인 요청이 있습니다" 인데 상세(details)는 "같은 이름의 시리즈가 이미 있습니다" 로 서로 다름 |
 | L | 낮음 | /manage/contents 안내 문구 탭 | '검색 추천어(search.suggest)' 블록을 빈 값으로 저장하면 400 "JSON 객체여야 합니다" 가 발생. 빈 값 허용 또는 입력 안내 필요. 같은 탭에서 리소스 1건 502 Bad Gateway 콘솔 오류 1회 관찰 |
 | M | 중간 | /manage/members | 명부 항목·새가족 접수 건을 삭제하는 UI를 열람 동의 게이트 앞에서는 확인할 수 없었음(게이트 뒤 화면은 미확인). 테스트 데이터 2건이 남아 있음(아래 참고) |
-| N | 낮음 | /bulletins | 주보 등록 직후 공개 주보 목록(해당 월)에 바로 보이지 않음. 삭제 후 재현 불가 — 캐시 또는 날짜 기준(주일만 표시) 확인 필요 |
-| O | 낮음 | /worship/sermons | 시리즈 드롭다운 버튼에 접근성 라벨이 없음(시맨틱 트리에서 빈 버튼) |
+| N | (철회) | /bulletins | 재검증 결과 문제 아님. 공개 주보 목록은 글 제목 대신 주보 날짜("11월 2일 주보")로 카드를 표시하므로 제목 기준 검색에 잡히지 않았을 뿐, 등록 직후 목록·API 모두 정상 반영됨 |
+| O | (해소) | /worship/sermons | 1차 검수 당시(build f5e68f9) 시리즈 드롭다운 버튼의 시맨틱 라벨이 비어 있었으나, 11/3 재검증 시(build aa14d46) "설교 시리즈 선택" 라벨이 붙어 있음 |
 
 ## 검수 후 남아 있는 테스트 데이터 (수동 정리 필요)
 
@@ -234,3 +234,41 @@ Claude Code 자동 모드의 안전 분류기가 다음 쓰기 동작을 차단�
 - 새가족 접수 상태 변경(연락함/보류/등록됨)과 삭제, 명부 항목 차단·삭제: 개인정보 화면이라 자동 실행이 차단됨. 관리자 화면에서 직접 확인 권장.
 - 권한 부여·회수: 승인된 교인 계정이 대상이어야 해 테스트 대상이 없어 미실행.
 - 회원가입·비밀번호 재설정의 SMS 인증 단계, 휴대폰·비밀번호 변경 저장, 회원 탈퇴, 소셜 로그인 완료: 실제 계정·전화가 필요하거나 검수 계정 자체를 바꾸므로 미실행.
+
+---
+
+# 재검증 메모 (2026-11-03, build `aa14d46`)
+
+검수 도중 사이트가 재배포되었습니다(1차 `f5e68f9` → `aa14d46`). 새 빌드에서 다시 확인한 내용입니다.
+
+## 해소된 항목
+- **이슈 1 설교 필터**: 필터 칩이 '주일예배 / 수요예배 / 새벽기도회 / 금요기도회 / 특별집회' 로 바뀌었고 요청이 `serviceType=주일예배` 로 나가 정상 조회됨. **해소 확인**.
+- **이슈 O 시리즈 드롭다운 라벨**: "설교 시리즈 선택" 라벨 확인. **해소**.
+- **이슈 N 주보 미노출**: 오탐으로 철회(위 표 참고).
+- 헤더 GNB·로고·로그인 버튼의 시맨틱 누락(이슈 8/11)은 새 빌드에서도 그대로임.
+
+## 이슈 I 상세: '주소 복사' 처리되지 않은 예외
+
+- 재현 스크립트: `node scripts/w26-clipboard-repro.mjs` (클립보드 권한 거부/허용 두 환경을 자동 비교)
+- 수동 재현(크롬): 아무 설교 상세(예: /worship/sermons/674)를 열고 DevTools Console 에서 아래를 실행한 뒤 '주소 복사' 클릭 → 콘솔에 `Uncaught Error` 가 찍히고 토스트가 뜨지 않음.
+  ```js
+  Object.defineProperty(navigator, 'clipboard', { value: undefined });
+  ```
+  실제 사용자 환경에서는 카카오톡·네이버 앱 등 인앱 브라우저, 클립보드 권한이 막힌 브라우저, 사용자 제스처 컨텍스트가 끊긴 iOS Safari 에서 같은 경로로 발생할 수 있음.
+- 발생 위치: 설교 상세·주보 상세·갤러리 앨범·오시는 길의 '주소 복사' 버튼 (4곳 모두 동일 스택).
+- 콘솔 스택(`main.dart.js`, build aa14d46):
+  ```
+  Error
+      at Object.t (main.dart.js:4230:20)          // A.t: throw helper (new Error())
+      at aJU.Op (main.dart.js:108059:9)           // StandardMethodCodec.decodeEnvelope → throw PlatformException
+      at main.dart.js:108346:98                   // MethodChannel.invokeMethod 응답 처리
+      at bIR.a (main.dart.js:5783:63)
+      at bIR.$2 (main.dart.js:55171:14)
+      at bHk.$1 (main.dart.js:55165:21)
+      at ast.wO (main.dart.js:56188:33)
+      at ben.$0 (main.dart.js:55602:11)
+      at Object.Ce (main.dart.js:5923:40)
+  ```
+  엔진 쪽 처리기(`Clipboard.setData` → `navigator.clipboard.writeText` 실패 시 `["copy_fail", "Clipboard.setData failed."]` 반환, main.dart.js:991918 부근)가 오류 응답을 돌려주고, 앱 코드가 `Clipboard.setData(...)` 의 Future 를 try/catch 없이 호출해 uncaught 로 전파됨.
+- 권한 허용 환경 결과: pageerror 0건, 토스트 "링크를 복사했어요"/"주소를 복사했어요", 클립보드에 URL·주소 정상 기록.
+- 제안: `Clipboard.setData` 를 try/catch 로 감싸고 실패 시 "복사할 수 없어요 — 주소를 길게 눌러 복사해 주세요" 안내 또는 URL 을 선택 가능한 텍스트로 노출.
