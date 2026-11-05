@@ -11,7 +11,7 @@ try {
   // 입력 순서 추정: 제목, 유튜브 링크, 설교자, 본문, 날짜 ... → 화면 텍스트로 확인 후 채움
   await typeInto(page, 0, `${TAG} 설교 ${Date.now()}`);
   await typeInto(page, 1, 'https://www.youtube.com/watch?v=_4EbWE7Xxjk'); await typeInto(page, 2, '검수용 설교자'); await typeInto(page, 3, '요 3:16');
-  await typeInto(page, 4, '2026-11-02', { clear: true }); await typeInto(page, 5, '주일예배'); await typeInto(page, 6, '자동 검수용 설교입니다. 곧 삭제됩니다.');
+  await typeInto(page, 4, '2026-11-02', { clear: true }); const n7 = (await inputs(page)).length; console.log('input count', n7, JSON.stringify((await inputs(page)).map(i => i.type))); if (n7 > 5) await typeInto(page, 5, n7 > 6 ? '주일예배' : '자동 검수용 설교입니다. 곧 삭제됩니다.'); if (n7 > 6) await typeInto(page, 6, '자동 검수용 설교입니다. 곧 삭제됩니다.'); console.log('buttons:', (await nodes(page)).filter(n => n.role).map(n => `[${n.role}]${n.label}`).join(' | '));
   console.log('values', JSON.stringify((await inputs(page)).map(i => i.value))); await shot('filled');
   step('저장'); await clickLast(/^(등록|저장|게시)$/); await page.waitForTimeout(1500); console.log('url', page.url()); console.log(await text(page, 800)); await shot('saved');
   step('공개 목록'); await goto(page, '/worship/sermons'); console.log(/QA테스트/.test(await text(page, 2000)) ? 'VISIBLE in public' : 'NOT visible'); await shot('public');

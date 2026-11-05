@@ -28,6 +28,9 @@ export async function goto(page, route, wait = 3000) {
 export async function enableSemantics(page) {
   await page.evaluate(() => document.querySelector('flt-semantics-placeholder')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))).catch(() => {});
   await page.waitForTimeout(800);
+  // 모바일 UA 에서는 placeholder 가 화면 전체를 덮고 '정중앙 탭' 으로만 활성화됨(Flutter 엔진 동작) → 실제 포인터로 중앙 탭
+  const still = await page.evaluate(() => !!document.querySelector('flt-semantics-placeholder')).catch(() => false);
+  if (still) { const vp = page.viewportSize(); const box = await page.evaluate(() => { const r = document.querySelector('flt-semantics-placeholder').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2, w: r.width }; }); if (box.w > 10) { await page.mouse.click(box.x, box.y); await page.waitForTimeout(1200); } }
 }
 // 시맨틱 노드 목록 (role, label, bbox)
 export async function nodes(page) {

@@ -13,6 +13,7 @@ try {
     const ins = await inputs(page);
     await typeInto(page, 0, `${TAG} ${tab} ${Date.now()}`);
     for (let i = 1; i < ins.length; i++) if (ins[i].type === 'textarea') { await typeInto(page, i, `자동 검수용 ${tab} 글입니다. 곧 삭제됩니다.`); break; }
+    { const chip = (await nodes(page)).find(n => n.role === 'checkbox' && !/게시 중|숨김|삭제됨|전체|신고/.test(n.label)); if (chip) { await page.mouse.click(chip.x + chip.w / 2, chip.y + chip.h / 2); await page.waitForTimeout(600); console.log('category chip:', chip.label); } }
     await shot(`${tab}_filled`);
     step(`${tab} 저장`); await clickLast(/^(게시|등록|저장|올리기|발행|게시하기)$/); await page.waitForTimeout(1500); console.log('url', page.url()); console.log(await text(page, 600)); await shot(`${tab}_saved`);
     const pub = tab === '교우소식' ? '/member-news' : '/faq';

@@ -1,0 +1,21 @@
+// 5차 정리: 남은 [QA테스트] 일정(취소 → 복구 테스트 → 다시 취소), 사역 테스트 글 삭제, FAQ 카테고리 [QA테스트] 분류 제거
+import { launch, goto, click, text, nodes, login, logout, step, clickLast as clickLastLib } from './qa-lib.mjs';
+const { browser, page, logs, shot } = await launch({ out: 'reports/write/cleanup5' });
+const clickLast = (re) => clickLastLib(page, re);
+const btns = async () => (await nodes(page)).filter(n => n.role === 'button').map(n => n.label).join(' | ');
+try {
+  step('login'); await login(page);
+  step('일정: 활성 목록에서 QA 일정 취소'); await goto(page, '/manage/events'); let row = (await nodes(page)).find(n => n.role === 'button' && /QA테스트/.test(n.label)); console.log('active QA row:', row?.label?.slice(0, 80));
+  if (row) { await page.mouse.click(row.x + row.w / 2, row.y + row.h / 2); await page.waitForTimeout(2500); await click(page, /^일정 취소$/, { role: 'button', wait: 1500 }); console.log('dialog:', (await text(page, 300)).slice(0, 200)); await clickLast(/^일정 취소하기$/); console.log('after cancel:', (await text(page, 300)).slice(60, 250)); }
+  step('일정: 취소됨 필터 → 복구 기능 확인'); await goto(page, '/manage/events'); await click(page, /^취소됨$/, { role: 'checkbox', wait: 2500 }); row = (await nodes(page)).find(n => n.role === 'button' && /QA테스트/.test(n.label)); console.log('cancelled QA row:', row?.label?.slice(0, 80));
+  if (row) { await page.mouse.click(row.x + row.w / 2, row.y + row.h / 2); await page.waitForTimeout(2500); console.log('buttons:', await btns()); await shot('cancelled_detail'); const restore = (await nodes(page)).find(n => n.role === 'button' && /복구|되살리|다시 활성/.test(n.label)); console.log('복구 버튼:', restore?.label);
+    if (restore) { await page.mouse.click(restore.x + restore.w / 2, restore.y + restore.h / 2); await page.waitForTimeout(1500); console.log('dialog:', (await text(page, 300)).slice(0, 200)); await clickLast(/^(복구|확인|복구하기)$/).catch(() => {}); await page.waitForTimeout(2000); await goto(page, '/events'); console.log('public after restore:', /QA테스트/.test(await text(page, 2000)) ? 'visible(복구됨)' : 'not visible');
+      await goto(page, '/manage/events'); const r2 = (await nodes(page)).find(n => n.role === 'button' && /QA테스트/.test(n.label)); if (r2) { await page.mouse.click(r2.x + r2.w / 2, r2.y + r2.h / 2); await page.waitForTimeout(2500); await click(page, /^일정 취소$/, { role: 'button', wait: 1500 }); await clickLast(/^일정 취소하기$/); console.log('re-cancelled'); } } }
+  await goto(page, '/events'); console.log('public events:', /QA테스트/.test(await text(page, 2000)) ? 'STILL VISIBLE' : 'clean');
+  step('사역 테스트 글 삭제'); await goto(page, '/manage/posts'); await click(page, /^사역$/, { role: 'button', wait: 2500 }); row = (await nodes(page)).find(n => n.role === 'button' && /\[QA테스트\] 사역/.test(n.label)); console.log('ministry QA row:', row?.label?.slice(0, 80));
+  if (row) { await page.mouse.click(row.x + row.w / 2, row.y + row.h / 2); await page.waitForTimeout(2500); await click(page, /^삭제$/, { role: 'button', wait: 1500 }); await clickLast(/^(삭제|확인)$/); console.log((await text(page, 300)).slice(0, 150)); }
+  await goto(page, '/ministry'); console.log('public ministry:', /QA테스트/.test(await text(page, 3000)) ? 'STILL VISIBLE' : 'clean');
+  step('FAQ 카테고리 정리'); await goto(page, '/faq'); const chips = (await nodes(page)).filter(n => n.role === 'checkbox').map(n => n.label); console.log('chips:', chips.join(', '));
+  if (chips[chips.length - 1] === '[QA테스트] 분류') { await goto(page, '/manage/posts'); await click(page, /^FAQ$/, { role: 'button', wait: 2000 }); await click(page, /^카테고리 관리$/, { role: 'button', wait: 2000 }); const dels = (await nodes(page)).filter(n => n.role === 'button' && /^삭제$/.test(n.label)); console.log('rows', dels.length); if (dels.length === chips.length - 1) { const d = dels[dels.length - 1]; await page.mouse.click(d.x + d.w / 2, d.y + d.h / 2); await page.waitForTimeout(1000); await clickLast(/^저장$/); console.log((await text(page, 300)).slice(0, 150)); } await goto(page, '/faq'); console.log('chips after:', (await nodes(page)).filter(n => n.role === 'checkbox').map(n => n.label).join(', ')); }
+} catch (e) { console.log('ERROR', e.message); await shot('error'); console.log((await text(page, 600))); console.log(await btns()); }
+finally { console.log('\nLOGS:\n' + logs.filter(l => /POST|PUT|DELETE|4\d\d|5\d\d/.test(l)).join('\n')); await logout(page); await browser.close(); }

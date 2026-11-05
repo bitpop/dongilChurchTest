@@ -15,13 +15,13 @@ try {
     else if (tab === '주보') { await typeInto(page, 0, '2026-11-02'); await typeInto(page, 1, `${TAG} 주보`); await typeInto(page, 2, '자동 검수용 주보입니다.'); await addPhoto(/^사진 추가$/); }  // 순서: 주보 날짜, 주보 제목, 본문, 경조사 4개
     else if (tab === '언론') { await typeInto(page, 0, '검수신문'); await typeInto(page, 1, '2026-11-02'); await typeInto(page, 2, 'https://example.com/qa-article'); await typeInto(page, 3, `${TAG} 보도`); await typeInto(page, 4, '자동 검수용 보도입니다.'); await addPhoto(/^사진 추가$/); }  // 순서: 매체명, 보도일, 기사 링크, 기사 제목, 본문
     else { await typeInto(page, 0, `${TAG} ${tab}`); await typeInto(page, 1, `자동 검수용 ${tab} 글입니다.`); await addPhoto(/^사진 추가$/); }
+    { const chip = (await nodes(page)).find(n => n.role === 'checkbox'); if (chip) { await page.mouse.click(chip.x + chip.w / 2, chip.y + chip.h / 2); await page.waitForTimeout(600); console.log('category chip:', chip.label); } }
     console.log('after fill:', (await text(page, 800)).slice(0, 400)); await shot(`${tab}_filled`);
-    await clickLast(/^등록$/); console.log('url', page.url()); console.log((await text(page, 700)).slice(0, 500)); await shot(`${tab}_saved`);
+    await clickLast(/^등록$/); console.log('url', page.url()); var createdUrl = page.url(); console.log((await text(page, 700)).slice(0, 500)); await shot(`${tab}_saved`);
     if (page.url().endsWith('/new')) { console.log('STILL ON FORM:', (await text(page, 3000)).match(/.{0,30}(주세요|필수|올려).{0,20}/g)); continue; }
     step(`${tab} 공개 확인`); await goto(page, pub[tab]); console.log(/QA테스트/.test(await text(page, 3000)) ? 'VISIBLE in public' : 'NOT visible'); await shot(`${tab}_public`);
     step(`${tab} 삭제`); await goto(page, '/manage/posts'); await click(page, new RegExp(`^${tab}$`), { role: 'button', wait: 2500 });
-    const row = (await nodes(page)).find(n => /QA테스트/.test(n.label) && n.role === 'button'); if (!row) { console.log('row not found'); continue; }
-    await page.mouse.click(row.x + row.w / 2, row.y + row.h / 2); await page.waitForTimeout(2500);
+    const row = (await nodes(page)).find(n => /QA테스트/.test(n.label) && n.role === 'button'); if (row) { await page.mouse.click(row.x + row.w / 2, row.y + row.h / 2); await page.waitForTimeout(2500); } else { console.log('row not found → 상세 URL 로 이동'); await goto(page, createdUrl.replace('https://dongilchurch.com', '')); }
     await click(page, /^삭제$/, { role: 'button', wait: 1500 }); await clickLast(/^(삭제|확인)$/); console.log((await text(page, 300)).slice(0, 200)); await shot(`${tab}_deleted`);
     await goto(page, pub[tab]); console.log(/QA테스트/.test(await text(page, 3000)) ? 'STILL VISIBLE' : 'gone from public');
   }
